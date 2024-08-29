@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,18 +8,70 @@
     <script src="//unpkg.com/alpinejs" defer></script>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div x-data="phoneBillCalculator()">
+        <!-- Calculate Total Form -->
+        <h3>Calculate the Phone Bill Total</h3>
         <form @submit.prevent="calculateTotal">
-            <label for="price_plan">Price Plan:</label>
-            <input type="text" id="price_plan" x-model="price_plan" required>
-            <br>
-            <label for="actions">Actions:</label>
-            <input type="text" id="actions" x-model="actions" required>
-            <br>
-            <button type="submit">Calculate Total</button>
+            <div>
+                <label for="price_plan">Price Plan:</label><br>
+                <input type="text" id="price_plan" x-model="price_plan" required>
+            </div>
+
+            <div>
+                <label for="actions">Actions:</label>
+                <input type="text" id="actions" x-model="actions" required>
+            </div>
+
+            <div>
+                <button type="submit">Calculate Total</button>
+            </div>
         </form>
         <div x-text="'Total Bill: ' + total"></div>
+
+        <!-- Fetch Price Plans -->
+        <button @click="fetchPricePlans">Fetch Price Plans</button>
+        <pre x-text="JSON.stringify(pricePlans, null, 2)"></pre>
+
+        <!-- Create Price Plan Form -->
+        <h3>Create Price Plan</h3>
+        <form @submit.prevent="createPricePlan">
+            <label for="create_name">Plan Name:</label>
+            <input type="text" id="create_name" x-model="createPlan.name" required>
+            <br>
+            <label for="create_call_cost">Call Cost:</label>
+            <input type="number" id="create_call_cost" x-model="createPlan.call_cost" step="0.01" required>
+            <br>
+            <label for="create_sms_cost">SMS Cost:</label>
+            <input type="number" id="create_sms_cost" x-model="createPlan.sms_cost" step="0.01" required>
+            <br>
+            <button type="submit">Create Price Plan</button>
+        </form>
+
+        <!-- Update Price Plan Form -->
+        <h3>Update Price Plan</h3>
+        <form @submit.prevent="updatePricePlan">
+            <label for="update_name">Plan Name:</label>
+            <input type="text" id="update_name" x-model="updatePlan.name" required>
+            <br>
+            <label for="update_call_cost">New Call Cost:</label>
+            <input type="number" id="update_call_cost" x-model="updatePlan.call_cost" step="0.01" required>
+            <br>
+            <label for="update_sms_cost">New SMS Cost:</label>
+            <input type="number" id="update_sms_cost" x-model="updatePlan.sms_cost" step="0.01" required>
+            <br>
+            <button type="submit">Update Price Plan</button>
+        </form>
+
+        <!-- Delete Price Plan Form -->
+        <h3>Delete Price Plan</h3>
+        <form @submit.prevent="deletePricePlan">
+            <label for="delete_id">Plan ID:</label>
+            <input type="number" id="delete_id" x-model="deletePlan.id" required>
+            <br>
+            <button type="submit">Delete Price Plan</button>
+        </form>
     </div>
 
     <script>
@@ -27,12 +80,15 @@
                 total: 0,
                 price_plan: '',
                 actions: '',
+                pricePlans: [],
+                createPlan: { name: '', call_cost: 0, sms_cost: 0 },
+                updatePlan: { name: '', call_cost: 0, sms_cost: 0 },
+                deletePlan: { id: 0 },
+
                 async calculateTotal() {
                     const response = await fetch('/api/phonebill/', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             price_plan: this.price_plan,
                             actions: this.actions
@@ -40,6 +96,44 @@
                     });
                     const result = await response.json();
                     this.total = result.total;
+                },
+
+                async fetchPricePlans() {
+                    const response = await fetch('/api/price_plans/');
+                    this.pricePlans = await response.json();
+                },
+
+                async createPricePlan() {
+                    const response = await fetch('/api/price_plan/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.createPlan)
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                    this.fetchPricePlans(); // Refresh the list
+                },
+
+                async updatePricePlan() {
+                    const response = await fetch('/api/price_plan/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.updatePlan)
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                    this.fetchPricePlans(); // Refresh the list
+                },
+
+                async deletePricePlan() {
+                    const response = await fetch('/api/price_plan/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.deletePlan)
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                    this.fetchPricePlans(); // Refresh the list
                 }
             };
         }
@@ -48,5 +142,7 @@
             Alpine.data('phoneBillCalculator', phoneBillCalculator);
         });
     </script>
+    
 </body>
+
 </html>
